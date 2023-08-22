@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import 'package:jrpg_dart/models/equipment.dart';
+
+import 'character_class.dart'; // Added character class import
 import 'race.dart';
 
 class Character {
@@ -8,12 +11,18 @@ class Character {
   int magic;
   int attackPower;
   Race race;
+  CharacterClass characterClass;
+  Equipement selectedEquipment;
   int specialAttackCounter = 0;
 
-  Character(this.name, this.health, this.magic, this.race, this.attackPower) {
-    attackPower += race.attackBonus;
-    magic += race.magicBonus;
-    health += race.healthBonus;
+  Character(this.name, this.health, this.magic, this.race, this.characterClass,
+      this.attackPower, this.selectedEquipment) {
+    // Ajout de l'équipement dans le constructeur
+    attackPower += race.attackBonus +
+        selectedEquipment
+            .attackBonus; // Utilisation de l'équipement sélectionné
+    magic += race.magicBonus + selectedEquipment.magicBonus;
+    health += race.healthBonus + selectedEquipment.healthBonus;
   }
 
   bool get isAlive => health > 0;

@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:jrpg_dart/models/race.dart';
 
 import '../models/character.dart';
+import '../models/character_class.dart';
+import '../models/equipment.dart';
+import '../widget/character_status_widget.dart';
+import '../widget/combat_control_widget.dart';
+import '../widget/combat_log_widget.dart';
+import '../widget/endofcombat_widget.dart';
 
 class GameScreen extends StatefulWidget {
   final Character character;
@@ -18,34 +24,43 @@ class _GameScreenState extends State<GameScreen> {
   Character? player1;
   Character? player2;
   bool isPlayer1Turn = true;
+  late int initialPlayerHealth;
   List<String> combatLogs = [];
 
   @override
   void initState() {
     super.initState();
+    initialPlayerHealth = widget.character.health;
+
+    // Déterminer aléatoirement qui commence
     resetGame();
   }
 
   void resetGame() {
     setState(() {
-      player1 = Character(
-        widget.character.name,
-        100 +
-            widget.character.race.healthBonus, // santé de base + bonus de race
-        10 + widget.character.race.magicBonus, // magie de base + bonus de race
-        widget.character.race,
-        5 +
-            widget
-                .character.race.attackBonus, // attaque de base + bonus de race
-      );
+      player1 = widget.character;
+      player1!.health = initialPlayerHealth; // Réinitialiser la santé du joueur
 
+      // Générez un adversaire aléatoire
       Race randomRace = getRandomRace();
-      int randomHealth = Random().nextInt(20) + 80;
-      int randomMagic = Random().nextInt(5) + 5;
-      int randomAttack = Random().nextInt(5) + 5;
+      int randomHealth = Random().nextInt(20) + 80; // santé entre 80 et 100
+      int randomMagic = Random().nextInt(5) + 5; // magie entre 5 et 10
+      int randomAttack = Random().nextInt(5) + 5; // attaque entre 5 et 10
 
+      EquipmentSet randomEquipmentSet = availableEquipmentSets[
+          Random().nextInt(availableEquipmentSets.length)];
+      Equipement randomEquipment = randomEquipmentSet.weapons.first; // Example
+      CharacterClass randomClass =
+          availableClasses[Random().nextInt(availableClasses.length)];
       player2 = Character(
-          'Adversaire', randomHealth, randomMagic, randomRace, randomAttack);
+        'Adversaire',
+        randomHealth,
+        randomMagic,
+        randomRace,
+        randomClass, // Utilisation de la classe aléatoire
+        randomAttack,
+        randomEquipment,
+      );
 
       combatLogs.clear();
     });
@@ -53,11 +68,14 @@ class _GameScreenState extends State<GameScreen> {
 
   void performTurn() {
     setState(() {
-      if (isPlayer1Turn && player1!.isAlive && player2!.isAlive) {
-        print("Tour de ${player1!.name}");
+      // Déterminer aléatoirement quel joueur joue ce tour
+      bool isPlayer1Active = Random().nextBool();
+
+      if (isPlayer1Active && player1!.isAlive && player2!.isAlive) {
+        combatLogs.add("Tour de ${player1!.name}");
         player1!.performTurn(player2!, combatLogs);
-      } else if (!isPlayer1Turn && player1!.isAlive && player2!.isAlive) {
-        print("Tour de ${player2!.name}");
+      } else if (!isPlayer1Active && player1!.isAlive && player2!.isAlive) {
+        combatLogs.add("Tour de ${player2!.name}");
         player2!.performTurn(player1!, combatLogs);
       }
 
@@ -68,8 +86,12 @@ class _GameScreenState extends State<GameScreen> {
       if (!player2!.isAlive) {
         print("${player2!.name} est vaincu !");
       }
+    });
+  }
 
-      isPlayer1Turn = !isPlayer1Turn; // Change le tour
+  void resetOpponentHealth() {
+    setState(() {
+      player2!.health = Random().nextInt(20) + 80; // santé entre 80 et 100
     });
   }
 
@@ -79,60 +101,22 @@ class _GameScreenState extends State<GameScreen> {
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-                '${player1!.name}: ${player1!.health} HP, ${player1!.magic} MP'),
-            Text(
-                '${player2!.name}: ${player2!.health} HP, ${player2!.magic} MP'),
-            ElevatedButton(
-              onPressed: () {
-                performTurn();
-              },
-              child: Text('Prochain tour'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                resetGame();
-              },
-              child: Text('Réinitialiser'),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: combatLogs.length,
-                itemBuilder: (context, index) {
-                  return Text(combatLogs[index]);
-                },
-              ),
-            ),
+            CharacterStatusWidget(character: player1!),
+            CharacterStatusWidget(character: player2!),
+            CombatControlsWidget(
+                performTurn: performTurn,
+                resetGame: resetGame,
+                resetOpponentHealth:
+                    resetOpponentHealth), // Ajout d'un bouton pour réinitialiser les HP de l'adversaire
+            CombatLogWidget(combatLogs: combatLogs),
           ],
         ),
         if (!player1!.isAlive || !player2!.isAlive)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              color: Colors.black.withOpacity(0.8),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      player1!.isAlive
-                          ? "${player1!.name} a gagné le combat"
-                          : "${player2!.name} a gagné le combat",
-                      style: TextStyle(fontSize: 24, color: Colors.white),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        resetGame();
-                      },
-                      child: Text('Fermer'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          EndOfCombatWidget(
+            isPlayer1Alive: player1!.isAlive,
+            player1Name: player1!.name,
+            player2Name: player2!.name,
+            resetGame: resetGame,
           ),
       ],
     );
