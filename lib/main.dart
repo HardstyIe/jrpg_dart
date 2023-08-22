@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
-
-import 'screens/gameScreen.dart';
+import 'package:jrpg_dart/screens/character_creation_screen.dart';
 
 void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-          appBar: AppBar(title: Text('JRPG Dart')), body: GameScreen()),
-    );
-  }
+  runApp(MaterialApp(
+    home: CharacterCreationScreen(),
+  ));
 }

@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'race.dart';
 
 class Character {
@@ -9,11 +10,11 @@ class Character {
   Race race;
   int specialAttackCounter = 0;
 
-  Character(this.name, this.health, this.magic, this.race){
-    attackPower += race.attackBonus; 
+  Character(this.name, this.health, this.magic, this.race, this.attackPower) {
+    attackPower += race.attackBonus;
     magic += race.magicBonus;
     health += race.healthBonus;
-  };
+  }
 
   bool get isAlive => health > 0;
 

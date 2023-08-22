@@ -1,66 +1,88 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:jrpg_dart/models/race.dart';
 
 import '../models/character.dart';
 
 class GameScreen extends StatefulWidget {
+  final Character character;
+
+  GameScreen({required this.character});
+
   @override
   _GameScreenState createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
-  Character player1 = Character('Joueur 1', 100, 10);
-  Character player2 = Character('Joueur 2', 100, 10);
+  Character? player1;
+  Character? player2;
   bool isPlayer1Turn = true;
   List<String> combatLogs = [];
 
-  void resetGame() {
-    setState(() {
-      player1 = Character('Joueur 1', 100, 10);
-      player2 = Character('Joueur 2', 100, 10);
-      combatLogs.clear();
-    });
+  @override
+  void initState() {
+    super.initState();
+    resetGame();
   }
 
-  void performAttack() {
+  void resetGame() {
     setState(() {
-      player1.attack(player2, combatLogs);
-      if (!player2.isAlive) {
-        print("${player2.name} est vaincu !");
-      }
+      player1 = Character(
+        widget.character.name,
+        100 +
+            widget.character.race.healthBonus, // santé de base + bonus de race
+        10 + widget.character.race.magicBonus, // magie de base + bonus de race
+        widget.character.race,
+        5 +
+            widget
+                .character.race.attackBonus, // attaque de base + bonus de race
+      );
+
+      Race randomRace = getRandomRace();
+      int randomHealth = Random().nextInt(20) + 80;
+      int randomMagic = Random().nextInt(5) + 5;
+      int randomAttack = Random().nextInt(5) + 5;
+
+      player2 = Character(
+          'Adversaire', randomHealth, randomMagic, randomRace, randomAttack);
+
+      combatLogs.clear();
     });
   }
 
   void performTurn() {
     setState(() {
-      if (isPlayer1Turn && player1.isAlive && player2.isAlive) {
-        print("Tour de ${player1.name}");
-        player1.performTurn(player2, combatLogs);
-      } else if (!isPlayer1Turn && player1.isAlive && player2.isAlive) {
-        print("Tour de ${player2.name}");
-        player2.performTurn(player1, combatLogs);
+      if (isPlayer1Turn && player1!.isAlive && player2!.isAlive) {
+        print("Tour de ${player1!.name}");
+        player1!.performTurn(player2!, combatLogs);
+      } else if (!isPlayer1Turn && player1!.isAlive && player2!.isAlive) {
+        print("Tour de ${player2!.name}");
+        player2!.performTurn(player1!, combatLogs);
       }
 
-      if (!player1.isAlive) {
-        print("${player1.name} est vaincu !");
+      if (!player1!.isAlive) {
+        print("${player1!.name} est vaincu !");
       }
 
-      if (!player2.isAlive) {
-        print("${player2.name} est vaincu !");
+      if (!player2!.isAlive) {
+        print("${player2!.name} est vaincu !");
       }
 
       isPlayer1Turn = !isPlayer1Turn; // Change le tour
     });
   }
 
-  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('${player1.name}: ${player1.health} HP, ${player1.magic} MP'),
-            Text('${player2.name}: ${player2.health} HP, ${player2.magic} MP'),
+            Text(
+                '${player1!.name}: ${player1!.health} HP, ${player1!.magic} MP'),
+            Text(
+                '${player2!.name}: ${player2!.health} HP, ${player2!.magic} MP'),
             ElevatedButton(
               onPressed: () {
                 performTurn();
@@ -83,7 +105,7 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ],
         ),
-        if (!player1.isAlive || !player2.isAlive)
+        if (!player1!.isAlive || !player2!.isAlive)
           Positioned(
             top: 0,
             left: 0,
@@ -96,9 +118,9 @@ class _GameScreenState extends State<GameScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      player1.isAlive
-                          ? "Joueur 1 a gagné le combat"
-                          : "Joueur 2 a gagné le combat",
+                      player1!.isAlive
+                          ? "${player1!.name} a gagné le combat"
+                          : "${player2!.name} a gagné le combat",
                       style: TextStyle(fontSize: 24, color: Colors.white),
                     ),
                     ElevatedButton(
